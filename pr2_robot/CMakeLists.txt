@@ -22,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   roslint
+  std_msgs
   sensor_msgs
 )
 find_package(Eigen3 REQUIRED)
@@ -34,7 +35,7 @@ find_package(Boost REQUIRED)
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
+catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -67,11 +68,19 @@ find_package(Boost REQUIRED)
 #   Message2.msg
 # )
 
+add_message_files(
+	FILES
+	DetectedObject.msg
+	DetectedObjectsArray.msg
+)
+
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
   PickPlace.srv
-	Grasp.srv
+  Grasp.srv
+  GetFloatArrayFeature.srv
+  GetNormals.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -86,6 +95,7 @@ generate_messages(
  DEPENDENCIES
  std_msgs
  geometry_msgs
+ sensor_msgs
 )
 
 ################################################
