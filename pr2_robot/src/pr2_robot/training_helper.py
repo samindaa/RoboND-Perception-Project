@@ -101,9 +101,9 @@ def spawn_model(model_name):
         Returns: None
     """
     initial_pose = Pose()
-    initial_pose.position.x = 0.35
+    initial_pose.position.x = 0.45
     initial_pose.position.y = 0
-    initial_pose.position.z = 1
+    initial_pose.position.z = 0.65
 
     # Spawn the new model #
     model_path = rospkg.RosPack().get_path('pr2_robot')+'/models/'

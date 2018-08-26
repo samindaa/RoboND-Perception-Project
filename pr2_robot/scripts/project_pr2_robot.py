@@ -63,14 +63,14 @@ def pcl_callback(pcl_msg):
 
     # Statistical outlier filter
     fil = cloud.make_statistical_outlier_filter()
-    fil.set_mean_k(50)
-    fil.set_std_dev_mul_thresh(1.0)
-    cloud = fil.filter()
+    fil.set_mean_k(15)
+    fil.set_std_dev_mul_thresh(0.1)
+    cloud_outlier_filter = fil.filter()
 
     # TODO: Voxel Grid Downsampling
     # Voxel Grid filter
     # Create a VoxelGrid filter object for our input point cloud
-    vox = cloud.make_voxel_grid_filter()
+    vox = cloud_outlier_filter.make_voxel_grid_filter()
 
     # Choose a voxel (also known as leaf) size
     # Note: this (1) is a poor choice of leaf size
@@ -90,16 +90,23 @@ def pcl_callback(pcl_msg):
     passthrough = cloud_filtered.make_passthrough_filter()
 
     # Assign axis and range to the passthrough filter object.
-    filter_axis = 'z'
-    passthrough.set_filter_field_name(filter_axis)
-    axis_min = 0.6
-    axis_max = 1.1
-    passthrough.set_filter_limits(axis_min, axis_max)
+    passthrough.set_filter_field_name('z')
+    passthrough.set_filter_limits(0.6, 1.1)
 
     # Finally use the filter function to obtain the resultant point cloud.
     cloud_filtered = passthrough.filter()
     # filename = 'pass_through_filtered.pcd'
     # pcl.save(cloud_filtered, filename)
+    passthrough = cloud_filtered.make_passthrough_filter()
+
+    # Assign axis and range to the passthrough filter object.
+    passthrough.set_filter_field_name('y')
+    passthrough.set_filter_limits(-0.5, 0.5)
+
+    # Finally use the filter function to obtain the resultant point cloud.
+    cloud_filtered = passthrough.filter()
+
+
 
     # TODO: RANSAC Plane Segmentation
     # Create the segmentation object
@@ -204,32 +211,36 @@ def pcl_callback(pcl_msg):
         # Extract histogram features
         # TODO: complete this step just as is covered in capture_features.py
         chists = compute_color_histograms(ros_cluster, using_hsv=True)
-        ##normals = get_normals(ros_cluster)
-        ##nhists = compute_normal_histograms(normals)
-        ##feature = np.concatenate((chists, nhists))
+        normals = get_normals(ros_cluster)
+        nhists = compute_normal_histograms(normals)
+        feature = np.concatenate((chists, nhists))
 
         # Make the prediction, retrieve the label for the result
         # and add it to detected_objects_labels list
-        #prediction = clf.predict(scaler.transform(feature.reshape(1,-1)))
-        #label = encoder.inverse_transform(prediction)[0]
-        #detected_objects_labels.append(label)
+        prediction = clf.predict(scaler.transform(feature.reshape(1,-1)))
+        label = encoder.inverse_transform(prediction)[0]
+        detected_objects_labels.append(label)
 
         # Publish a label into RViz
+        points_arr = np.asarray([white_cloud[i] for i in pts_list])
+        rospy.loginfo("points_arr: {}".format(points_arr.shape))
+        label_pos = list(np.mean(points_arr, axis=0)[:3])
         #label_pos = list(white_cloud[pts_list[0]])
-        #label_pos[2] += .4
-        #object_markers_pub.publish(make_label(label,label_pos, index))
+        label_pos[2] += .3
+
+        object_markers_pub.publish(make_label(label,label_pos, index))
 
         # Add the detected object to the list of detected objects.
-        #do = DetectedObject()
-        #do.label = label
-        #do.cloud = ros_cluster
-        #detected_objects.append(do)
+        do = DetectedObject()
+        do.label = label
+        do.cloud = ros_cluster
+        detected_objects.append(do)
 
     rospy.loginfo('Detected {} objects: {}'.format(len(detected_objects_labels), detected_objects_labels))
 
     # Publish the list of detected objects
     # This is the output you'll need to complete the upcoming project!
-    ##detected_objects_pub.publish(detected_objects)
+    detected_objects_pub.publish(detected_objects)
 
     # Publish the list of detected objects
 
@@ -357,15 +368,13 @@ if __name__ == '__main__':
     detected_objects_pub = rospy.Publisher("/detected_objects", DetectedObjectsArray, queue_size=1)
 
     # TODO: Load Model From disk
-    #model = pickle.load(open('model.sav', 'rb'))
-    #clf = model['classifier']
-    #encoder = LabelEncoder()
-    #encoder.classes_ = model['classes']
-    #scaler = model['scaler']
-    #rospy.loginfo("model is ready")
-
-    # Initialize color_list
-    #get_color_list.color_list = []
+    training_set_name = 'list1'
+    model = pickle.load(open('model_{}.sav'.format(training_set_name), 'rb'))
+    clf = model['classifier']
+    encoder = LabelEncoder()
+    encoder.classes_ = model['classes']
+    scaler = model['scaler']
+    rospy.loginfo("model is ready")
 
     # TODO: Spin while node is not shutdown
     while not rospy.is_shutdown():

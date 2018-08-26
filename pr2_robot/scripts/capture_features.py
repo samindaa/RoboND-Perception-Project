@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
         spawn_model(model_name)
 
-        num_samples = 30
+        num_samples = 50
         print("num_samples: {}".format(num_samples))
         for i in range(num_samples):
             # make five attempts to get a valid a point cloud then give up

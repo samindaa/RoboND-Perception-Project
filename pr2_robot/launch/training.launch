@@ -31,7 +31,7 @@
 
   <node name="pr2_cloud_transformer" pkg="pr2_robot" type="pr2_cloud_transformer"
     respawn="false" output="screen">
-    <param name="demo" type="bool" value="false"/>
+    <param name="demo" type="bool" value="true"/>
   </node>
 
   <node name="pr2_pick_place_server" pkg="pr2_robot" type="pr2_pick_place_server"
