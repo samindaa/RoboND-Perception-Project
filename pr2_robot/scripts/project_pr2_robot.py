@@ -62,10 +62,10 @@ def pcl_callback(pcl_msg):
     cloud = ros_to_pcl(pcl_msg)
 
     # Statistical outlier filter
-    #fil = cloud.make_statistical_outlier_filter()
-    #fil.set_mean_k(50)
-    #fil.set_std_dev_mul_thresh(1.0)
-    #cloud_filtered = fil.filter()
+    fil = cloud.make_statistical_outlier_filter()
+    fil.set_mean_k(50)
+    fil.set_std_dev_mul_thresh(1.0)
+    cloud = fil.filter()
 
     # TODO: Voxel Grid Downsampling
     # Voxel Grid filter
@@ -174,7 +174,7 @@ def pcl_callback(pcl_msg):
     # TODO: Publish ROS messages
     pcl_objects_pub.publish(ros_cloud_objects)
     pcl_table_pub.publish(ros_cloud_table)
-    #pcl_cluster_pub.publish(ros_cluster_cloud)
+    pcl_cluster_pub.publish(ros_cluster_cloud)
 
     rospy.loginfo("pcl_objects and pcl_table published")
 
@@ -195,36 +195,35 @@ def pcl_callback(pcl_msg):
     detected_objects_labels = []
     detected_objects = []
 
-    if False:
-        for index, pts_list in enumerate(cluster_indices):
-            # Grab the points for the cluster from the extracted outliers (cloud_objects)
-            pcl_cluster = extracted_outliers.extract(pts_list)
-            # TODO: convert the cluster from pcl to ROS using helper function
-            ros_cluster = pcl_to_ros(pcl_cluster)
+    for index, pts_list in enumerate(cluster_indices):
+        # Grab the points for the cluster from the extracted outliers (cloud_objects)
+        pcl_cluster = extracted_outliers.extract(pts_list)
+        # TODO: convert the cluster from pcl to ROS using helper function
+        ros_cluster = pcl_to_ros(pcl_cluster)
 
-            # Extract histogram features
-            # TODO: complete this step just as is covered in capture_features.py
-            chists = compute_color_histograms(ros_cluster, using_hsv=True)
-            normals = get_normals(ros_cluster)
-            nhists = compute_normal_histograms(normals)
-            feature = np.concatenate((chists, nhists))
+        # Extract histogram features
+        # TODO: complete this step just as is covered in capture_features.py
+        chists = compute_color_histograms(ros_cluster, using_hsv=True)
+        ##normals = get_normals(ros_cluster)
+        ##nhists = compute_normal_histograms(normals)
+        ##feature = np.concatenate((chists, nhists))
 
-            # Make the prediction, retrieve the label for the result
-            # and add it to detected_objects_labels list
-            #prediction = clf.predict(scaler.transform(feature.reshape(1,-1)))
-            #label = encoder.inverse_transform(prediction)[0]
-            #detected_objects_labels.append(label)
+        # Make the prediction, retrieve the label for the result
+        # and add it to detected_objects_labels list
+        #prediction = clf.predict(scaler.transform(feature.reshape(1,-1)))
+        #label = encoder.inverse_transform(prediction)[0]
+        #detected_objects_labels.append(label)
 
-            # Publish a label into RViz
-            #label_pos = list(white_cloud[pts_list[0]])
-            #label_pos[2] += .4
-            #object_markers_pub.publish(make_label(label,label_pos, index))
+        # Publish a label into RViz
+        #label_pos = list(white_cloud[pts_list[0]])
+        #label_pos[2] += .4
+        #object_markers_pub.publish(make_label(label,label_pos, index))
 
-            # Add the detected object to the list of detected objects.
-            #do = DetectedObject()
-            #do.label = label
-            #do.cloud = ros_cluster
-            #detected_objects.append(do)
+        # Add the detected object to the list of detected objects.
+        #do = DetectedObject()
+        #do.label = label
+        #do.cloud = ros_cluster
+        #detected_objects.append(do)
 
     rospy.loginfo('Detected {} objects: {}'.format(len(detected_objects_labels), detected_objects_labels))
 
@@ -348,14 +347,14 @@ if __name__ == '__main__':
     # TODO: Create Publishers
     pcl_objects_pub = rospy.Publisher("/pcl_objects", PointCloud2, queue_size=1)
     pcl_table_pub = rospy.Publisher("/pcl_table", PointCloud2, queue_size=1)
-    # pcl_cluster_pub = rospy.Publisher("/pcl_cluster", PointCloud2, queue_size=1)
+    pcl_cluster_pub = rospy.Publisher("/pcl_cluster", PointCloud2, queue_size=1)
 
     # TODO: here you need to create two publishers
     # Call them object_markers_pub and detected_objects_pub
     # Have them publish to "/object_markers" and "/detected_objects" with
     # Message Types "Marker" and "DetectedObjectsArray" , respectively
-    #object_markers_pub = rospy.Publisher("/object_markers", Marker, queue_size=1)
-    #detected_objects_pub = rospy.Publisher("/detected_objects", DetectedObjectsArray, queue_size=1)
+    object_markers_pub = rospy.Publisher("/object_markers", Marker, queue_size=1)
+    detected_objects_pub = rospy.Publisher("/detected_objects", DetectedObjectsArray, queue_size=1)
 
     # TODO: Load Model From disk
     #model = pickle.load(open('model.sav', 'rb'))

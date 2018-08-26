@@ -55,7 +55,7 @@ def capture_sample():
     sms_req.model_state.reference_frame = 'world'
     set_model_state_prox(sms_req)
 
-    return rospy.wait_for_message('/sensor_stick/point_cloud', PointCloud2)
+    return rospy.wait_for_message('/pr2/world/points', PointCloud2)
 
 
 def initial_setup():
@@ -101,12 +101,12 @@ def spawn_model(model_name):
         Returns: None
     """
     initial_pose = Pose()
-    initial_pose.position.x = 0
-    initial_pose.position.y = 1
+    initial_pose.position.x = 0.35
+    initial_pose.position.y = 0
     initial_pose.position.z = 1
 
     # Spawn the new model #
-    model_path = rospkg.RosPack().get_path('sensor_stick')+'/models/'
+    model_path = rospkg.RosPack().get_path('pr2_robot')+'/models/'
     model_xml = ''
 
     with open (model_path + model_name + '/model.sdf', 'r') as xml_file:

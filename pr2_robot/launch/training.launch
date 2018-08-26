@@ -5,19 +5,19 @@
   <include file="$(find pr2_moveit)/launch/move_group.launch"/>
 
   <rosparam command="load" file="$(find pr2_moveit)/config/grasp.yaml"/>
-  <rosparam command="load" file="$(find pr2_robot)/config/dropbox.yaml"/>
+  <!--<rosparam command="load" file="$(find pr2_robot)/config/dropbox.yaml"/>-->
 
   <!--Launch a gazebo world-->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <!--TODO:Change the world name to load different tabletop setup-->
-    <arg name="world_name" value="$(find pr2_robot)/worlds/test1.world"/>
+    <!--<arg name="world_name" value="$(find pr2_robot)/worlds/test1.world"/>-->
     <!--<arg name="world_name" value="$(find pr2_robot)/worlds/test2.world"/>-->
     <!--<arg name="world_name" value="$(find pr2_robot)/worlds/test3.world"/>-->
-    <arg name="use_sim_time" value="true"/>
-    <arg name="paused" value="false"/>
-    <arg name="gui" value="true"/>
-    <arg name="headless" value="false"/>
-    <arg name="debug" value="false"/>
+    <!--<arg name="use_sim_time" value="true"/>-->
+    <!--<arg name="paused" value="false"/>-->
+    <!--<arg name="gui" value="true"/>-->
+    <!--<arg name="headless" value="false"/>-->
+    <!--<arg name="debug" value="false"/>-->
   </include>
 
   <!--spawn a robot in gazebo world-->
@@ -46,6 +46,8 @@
   <node name="$(anon rviz)" pkg="rviz" type="rviz" respawn="false"
     output="screen" args="-d $(find pr2_robot)/config/pr2.rviz"/>
   <!-- The feature extractor node -->
-  <node name="feature_extractor" pkg="sensor_stick" type="feature_extractor" respawn="false"/>
+  <node name="feature_extractor" pkg="pr2_robot" type="feature_extractor" respawn="false"/>
+
+  <!--<node pkg="pr2_robot" name="capture_node" type="capture_features.py" output="screen"/>-->
 
 </launch>
