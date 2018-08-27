@@ -4,7 +4,7 @@ import itertools
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import svm
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.preprocessing import LabelEncoder, StandardScaler, RobustScaler
 from sklearn import cross_validation
 from sklearn import metrics
 
@@ -38,9 +38,23 @@ def plot_confusion_matrix(cm, classes,
 
 print("Training starts")
 
-training_set_name = 'list1'
+training_set_name = 'list5_vox'
+
+print('training_set_name: {}'.format(training_set_name))
+
+training_set_names_dict = {
+    'list1': ['list1'],
+    'list2': ['list1', 'list2'],
+    'list3': ['list1', 'list2', 'list3'],
+    'list4': ['list4'],
+    'list5_vox': ['list1_vox', 'list2_vox', 'list3_vox'],
+}
 # Load training data from disk
-training_set = pickle.load(open('training_set_{}.sav'.format(training_set_name), 'rb'))
+training_set = []
+
+for list_name in training_set_names_dict[training_set_name]:
+    print("list_name: {}".format(list_name))
+    training_set.extend(pickle.load(open('training_set_{}.sav'.format(list_name), 'rb')))
 
 # Format the features and labels for use with scikit learn
 feature_list = []
@@ -56,7 +70,7 @@ print('Invalid Features in Training set: {}'.format(len(training_set)-len(featur
 
 X = np.array(feature_list)
 # Fit a per-column scaler
-X_scaler = StandardScaler().fit(X)
+X_scaler = RobustScaler().fit(X)
 # Apply the scaler to X
 X_train = X_scaler.transform(X)
 y_train = np.array(label_list)
@@ -66,9 +80,10 @@ encoder = LabelEncoder()
 y_train = encoder.fit_transform(y_train)
 
 # Create classifier
-C = 0.5
+C = 25.0
 print("C: {}".format(C))
-clf = svm.SVC(kernel='linear', C=C)
+#clf = svm.SVC(kernel='linear', C=C)
+clf = svm.LinearSVC(C=C)
 
 # Set up 5-fold cross-validation
 kf = cross_validation.KFold(len(X_train),
