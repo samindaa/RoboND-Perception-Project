@@ -5,7 +5,6 @@ import numpy as np
 import sklearn
 from sklearn.preprocessing import LabelEncoder
 import pickle
-# from sensor_stick.srv import GetNormals
 from pr2_robot.features import compute_color_histograms
 from pr2_robot.features import compute_normal_histograms
 from visualization_msgs.msg import Marker
@@ -15,6 +14,7 @@ from pr2_robot.msg import DetectedObject
 from pr2_robot.pcl_helper import *
 
 import rospy
+import rospkg
 import tf
 from geometry_msgs.msg import Pose
 from std_msgs.msg import Float64
@@ -64,7 +64,7 @@ def pcl_callback(pcl_msg):
 
     # Statistical outlier filter
     fil = cloud.make_statistical_outlier_filter()
-    fil.set_mean_k(15)
+    fil.set_mean_k(10)
     fil.set_std_dev_mul_thresh(0.1)
     cloud_outlier_filter = fil.filter()
 
@@ -326,13 +326,14 @@ if __name__ == '__main__':
     detected_objects_pub = rospy.Publisher("/detected_objects", DetectedObjectsArray, queue_size=1)
 
     # Load Model From disk
-    training_set_name = 'list5_vox'
-    model = pickle.load(open('model_{}.sav'.format(training_set_name), 'rb'))
+    model_path = rospkg.RosPack().get_path('pr2_robot') + '/scripts/' + 'model_list5_vox.sav'
+    rospy.loginfo("model_path: {}".format(model_path))
+    model = pickle.load(open(model_path, 'rb'))
     clf = model['classifier']
     encoder = LabelEncoder()
     encoder.classes_ = model['classes']
     scaler = model['scaler']
-    rospy.loginfo("model is ready: {}".format(training_set_name))
+    rospy.loginfo("model is loaded")
 
     # Spin while node is not shutdown
     while not rospy.is_shutdown():
