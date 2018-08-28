@@ -1,57 +1,82 @@
 ## Project: Perception Pick & Place
-### Writeup Template: You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
-
+### Saminda Abeyruwan
 ---
 
+I have approached the "Perception Pick & Place" project as an extension of the Exercise-3, [RoboND-Perception-Exercises](https://github.com/samindaa/RoboND-Perception-Exercises). After cloning, [https://github.com/samindaa/RoboND-Perception-Exercises](https://github.com/samindaa/RoboND-Perception-Project), all the necessary resources -- src, srv, msg, and scripts -- have been copied and updated to __pr2_robot__ ROS package. The following files are my contributions:
 
-# Required Steps for a Passing Submission:
-1. Extract features and train an SVM model on new objects (see `pick_list_*.yaml` in `/pr2_robot/config/` for the list of models you'll be trying to identify). 
-2. Write a ROS node and subscribe to `/pr2/world/points` topic. This topic contains noisy point cloud data that you must work with.
-3. Use filtering and RANSAC plane fitting to isolate the objects of interest from the rest of the scene.
-4. Apply Euclidean clustering to create separate clusters for individual items.
-5. Perform object recognition on these objects and assign them labels (markers in RViz).
-6. Calculate the centroid (average in x, y and z) of the set of points belonging to that each object.
-7. Create ROS messages containing the details of each object (name, pick_pose, etc.) and write these messages out to `.yaml` files, one for each of the 3 scenarios (`test1-3.world` in `/pr2_robot/worlds/`).  [See the example `output.yaml` for details on what the output should look like.](https://github.com/udacity/RoboND-Perception-Project/blob/master/pr2_robot/config/output.yaml)  
-8. Submit a link to your GitHub repo for the project or the Python code for your perception pipeline and your output `.yaml` files (3 `.yaml` files, one for each test world).  You must have correctly identified 100% of objects from `pick_list_1.yaml` for `test1.world`, 80% of items from `pick_list_2.yaml` for `test2.world` and 75% of items from `pick_list_3.yaml` in `test3.world`.
-9. Congratulations!  Your Done!
+* [project\_pr2\_robot.py](https://github.com/samindaa/RoboND-Perception-Project/blob/master/pr2_robot/scripts/project_pr2_robot.py): perception pipeline. 
+*  [train_svm.py](https://github.com/samindaa/RoboND-Perception-Project/blob/master/pr2_robot/scripts/train_svm.py): training file.
+*  [capture_features.py](https://github.com/samindaa/RoboND-Perception-Project/blob/master/pr2_robot/scripts/capture_features.py): training example generation file. 
+*  [features.py](https://github.com/samindaa/RoboND-Perception-Project/blob/master/pr2_robot/src/pr2_robot/features.py): captures features of the voxel map.
+*  [model\_list5\_vox.sav](https://github.com/samindaa/RoboND-Perception-Project/blob/master/pr2_robot/scripts/model_list5_vox.sav): trained model.
+*  [training.launch](https://github.com/samindaa/RoboND-Perception-Project/blob/master/pr2_robot/launch/training.launch): ROS training example generation launcher. 
+*  [output_1.yaml](https://github.com/samindaa/RoboND-Perception-Project/blob/master/pr2_robot/config/output_1.yaml): project submission file for test1.world.
+*  [output_2.yaml](https://github.com/samindaa/RoboND-Perception-Project/blob/master/pr2_robot/config/output_2.yaml): project submission file for test2.world.
+*  [output_3.yaml](https://github.com/samindaa/RoboND-Perception-Project/blob/master/pr2_robot/config/output_3.yaml): project submission file for test3.world.
 
-# Extra Challenges: Complete the Pick & Place
-7. To create a collision map, publish a point cloud to the `/pr2/3d_map/points` topic and make sure you change the `point_cloud_topic` to `/pr2/3d_map/points` in `sensors.yaml` in the `/pr2_robot/config/` directory. This topic is read by Moveit!, which uses this point cloud input to generate a collision map, allowing the robot to plan its trajectory.  Keep in mind that later when you go to pick up an object, you must first remove it from this point cloud so it is removed from the collision map!
-8. Rotate the robot to generate collision map of table sides. This can be accomplished by publishing joint angle value(in radians) to `/pr2/world_joint_controller/command`
-9. Rotate the robot back to its original state.
-10. Create a ROS Client for the “pick_place_routine” rosservice.  In the required steps above, you already created the messages you need to use this service. Checkout the [PickPlace.srv](https://github.com/udacity/RoboND-Perception-Project/tree/master/pr2_robot/srv) file to find out what arguments you must pass to this service.
-11. If everything was done correctly, when you pass the appropriate messages to the `pick_place_routine` service, the selected arm will perform pick and place operation and display trajectory in the RViz window
-12. Place all the objects from your pick list in their respective dropoff box and you have completed the challenge!
-13. Looking for a bigger challenge?  Load up the `challenge.world` scenario and see if you can get your perception pipeline working there!
 
-## [Rubric](https://review.udacity.com/#!/rubrics/1067/view) Points
-### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
+The project is based of off a PR2 robot that picks objects, such as soap, and snack, and place them in buckets at its right and left sides. The following image shows the PR2 robot is at the rest position in the test3.world. 
 
----
-### Writeup / README
+![image1](./misc/image1.png) 
 
-#### 1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.  
+The PR2 consists of a RGBD camera, and the output is noisy similar to a real world sensor. The following figure shows an example output:
 
-You're reading it!
+![image2](./misc/image2.png)
 
-### Exercise 1, 2 and 3 pipeline implemented
-#### 1. Complete Exercise 1 steps. Pipeline for filtering and RANSAC plane fitting implemented.
+__pcl_callback()__ contains all the constructs from Exercise-3 with the following modifications.
 
-#### 2. Complete Exercise 2 steps: Pipeline including clustering for segmentation implemented.  
+1. In order to compensate for noise, I have used statistical outlier filter. It is evident from experimentation that a mean value between 10 and 15, and standard deviation 0.1 provided the best values. I have used mean value 10.
+2. The voxel leaf size has been set to 0.01.
+3. I have used two pass through filter directions: __z__ and __y__. __z__ has been set similar to Exercise-3. As you see from the above figure, at ready pose, the two sides of the bins show up in the voxel maps. Therefore, I have add another pass through filter in __y__ direction and set the filter limits to -0.5 and 0.5.
+4. After running RANSAC for plane filtering, I have obtained the inliers and outliers as follows. For example, test3.world,
 
-#### 2. Complete Exercise 3 Steps.  Features extracted and SVM trained.  Object recognition implemented.
-Here is an example of how to include an image in your writeup.
+Inliers:
+![image2](./misc/image3.png)
 
-![demo-1](https://user-images.githubusercontent.com/20687560/28748231-46b5b912-7467-11e7-8778-3095172b7b19.png)
+Outliers:
+![image2](./misc/image4.png)
+5. Finally, I have used  Euclidean clustering to obtain potential clusters (more information available later).
 
-### Pick and Place Setup
+The next step is to develop the model to classify voxel clusters to named object via a machine learning model. First, we need to create a training set of the interested objects, and define or learn the features that describe those objects. I have used the framework provided in Exercise-3 to generate objects and capture features.
 
-#### 1. For all three tabletop setups (`test*.world`), perform object recognition, then read in respective pick list (`pick_list_*.yaml`). Next construct the messages that would comprise a valid `PickPlace` request output them to `.yaml` format.
+The features are developed in __features.py__. I have used HSV color histogram, [compute\_color\_histograms](https://github.com/samindaa/RoboND-Perception-Project/blob/master/pr2_robot/src/pr2_robot/features.py#L13), and normal histogram, [compute\_normal\_histograms](https://github.com/samindaa/RoboND-Perception-Project/blob/master/pr2_robot/src/pr2_robot/features.py#L51), and concatenate them to obtain the feature vector. I have selected the 8 objects: __biscuits__, __soap__, __soap2__, __book__, __glue__, __sticky_notes__, __snacks__, and __eraser__.
 
-And here's another image! 
-![demo-2](https://user-images.githubusercontent.com/20687560/28748286-9f65680e-7468-11e7-83dc-f1a32380b89c.png)
+__capture_features.py__ has spawned the objects in a ROS environment setup by __training.launch__ launcher. I have collected 256 training examples per object with a random pose with an initial position (0.55, 0, 0.65) (please see [training_helper.py](https://github.com/samindaa/RoboND-Perception-Project/blob/master/pr2_robot/src/pr2_robot/training_helper.py#L96)).
 
-Spend some time at the end to discuss your code, what techniques you used, what worked and why, where the implementation might fail and how you might improve it if you were going to pursue this project further.  
+I have used the noisy RGBD camera to capture the objects. Therefore, unlike Exercise-3, I have used preprocessing similar to perception pipeline, but, up to creating a VoxelGrid filter to to obtain the resultant downsampled point cloud (please see [here](https://github.com/samindaa/RoboND-Perception-Project/blob/master/pr2_robot/scripts/capture_features.py#L102)).
+
+I have used svm.LinearSVC, and the best results were obtained with a C value of 25. The classifier has achieved an accuracy about 81%. The confusion matrix as follows:
+
+![image5](./misc/image5.png)
+
+### test1.world
+
+Accuracy: 100%
+
+Output: [output_1.yaml](https://github.com/samindaa/RoboND-Perception-Project/blob/master/pr2_robot/config/output_1.yaml)
+
+![image5](./misc/image6.png)
+
+
+### test2.world
+
+Accuracy: 100%
+
+Output: [output_2.yaml](https://github.com/samindaa/RoboND-Perception-Project/blob/master/pr2_robot/config/output_2.yaml)
+
+![image5](./misc/image7.png)
+
+### test3.world
+
+Accuracy: 87.5%
+
+Reason: Only 7 clusters were formed. All 7 clusters were classified 
+correctly. Glue was occluded by book, so it was not detected by my parameter setting. 
+
+Output: [output_3.yaml](https://github.com/samindaa/RoboND-Perception-Project/blob/master/pr2_robot/config/output_2.yaml)
+
+![image5](./misc/image8.png)
+
 
 
 
