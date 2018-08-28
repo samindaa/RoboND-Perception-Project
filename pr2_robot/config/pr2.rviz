@@ -10,7 +10,7 @@ Panels:
         - /MotionPlanning1
         - /MarkerArray1
       Splitter Ratio: 0.5
-    Tree Height: 212
+    Tree Height: 444
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -242,17 +242,17 @@ Visualization Manager:
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.351071298
-        Y: 0.0571484081
-        Z: 0.442511201
+        X: 0.536231816
+        Y: 0.0704078078
+        Z: 0.637590408
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.0500000007
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.455399364
+      Pitch: 0.785399139
       Target Frame: base_link
       Value: Orbit (rviz)
-      Yaw: 3.18991518
+      Yaw: 3.16991472
     Saved: ~
 Window Geometry:
   Camera:
@@ -278,5 +278,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1280
-  X: 0
-  Y: 24
+  X: -1
+  Y: -2

@@ -49,6 +49,73 @@ def send_to_yaml(yaml_filename, dict_list):
         yaml.dump(data_dict, outfile, default_flow_style=False)
 
 
+# Generate output
+def generate_output(centroids, indexer):
+    dropbox_indexer = dict()
+    for index, dropbox in enumerate(dropbox_param):
+        dropbox_indexer[dropbox['group']] = index
+
+    for group, index in dropbox_indexer.items():
+        rospy.loginfo('group: {} index: {}'.format(group, index))
+        rospy.loginfo('name: {} position: {}'.format(
+            dropbox_param[index]['name'],
+            dropbox_param[index]['position']))
+
+    dict_list = []
+    yaml_filename = None
+    for object in object_list_param:
+        object_name_value = object['name']
+        object_group_value = object['group']
+        rospy.loginfo("object_name_value: {} object_group_value: {}".format(object_name_value, object_group_value))
+
+        if not object_name_value in indexer:
+            rospy.logwarn("object_name_value: {} is not available in the indexer.".format(object_name_value))
+            continue
+
+        rospy.loginfo(
+            "to yaml => object_name_value: {} object_group_value: {}".format(object_name_value, object_group_value))
+        test_scene_num = Int32()
+        # test case inference based on the objects detected
+        if len(indexer) == 3:
+            test_scene_num.data = 1
+            yaml_filename = rospkg.RosPack().get_path('pr2_robot') + '/config/' + 'output_1.yaml'
+        elif len(indexer) == 5:
+            test_scene_num.data = 2
+            yaml_filename = rospkg.RosPack().get_path('pr2_robot') + '/config/' + 'output_2.yaml'
+        else:
+            test_scene_num.data = 3
+            yaml_filename = rospkg.RosPack().get_path('pr2_robot') + '/config/' + 'output_3.yaml'
+
+        object_name = String()
+        object_name.data = object_name_value
+        rospy.loginfo('object_name: {}'.format(object_name.data))
+
+        arm_name = String()
+        arm_name.data = dropbox_param[dropbox_indexer[object_group_value]]['name']
+        rospy.loginfo('arm_name: {}'.format(arm_name.data))
+
+        pick_pose = Pose()
+        pick_position = centroids[indexer[object_name_value]]
+        rospy.loginfo('pick_position: {}'.format(pick_position))
+        pick_pose.position.x = np.asscalar(pick_position[0])
+        pick_pose.position.y = np.asscalar(pick_position[1])
+        pick_pose.position.z = np.asscalar(pick_position[2])
+
+        place_pose = Pose()
+        place_position = dropbox_param[dropbox_indexer[object_group_value]]['position']
+        rospy.loginfo('place_position: {}'.format(place_position))
+        place_pose.position.x = float(place_position[0])
+        place_pose.position.y = float(place_position[1])
+        place_pose.position.z = float(place_position[2])
+
+        # Populate various ROS messages
+        yaml_dict = make_yaml_dict(test_scene_num, arm_name, object_name, pick_pose, place_pose)
+        dict_list.append(yaml_dict)
+
+    rospy.loginfo("yaml_filename: {}".format(yaml_filename))
+    send_to_yaml(yaml_filename, dict_list)
+
+
 # Testing
 # def pcl_test_callback(pcl_msg):
 #     pcl_world_points_test_pub.publish(pcl_msg)
@@ -236,7 +303,9 @@ def pcl_callback(pcl_msg):
 
     labels = []
     centroids = []  # to be list of tuples (x, y, z)
+    indexer = dict()
     for index, object in enumerate(detected_objects):
+        indexer[object.label] = index
         labels.append(object.label)
         points_arr = ros_to_pcl(object.cloud).to_array()
         points_centroid = np.mean(points_arr, axis=0)[:3]
@@ -250,12 +319,15 @@ def pcl_callback(pcl_msg):
     # This is the output you'll need to complete the upcoming project!
     detected_objects_pub.publish(detected_objects)
 
+    # Create the output
+    generate_output(centroids, indexer)
+
     # Suggested location for where to invoke your pr2_mover() function within pcl_callback()
     # Could add some logic to determine whether or not your object detections are robust
     # before calling pr2_mover()
     try:
         ##pr2_mover(detected_objects)
-        print("TODO: mover")
+        rospy.loginfo("TODO: mover")
     except rospy.ROSInterruptException:
         pass
 
@@ -305,6 +377,10 @@ if __name__ == '__main__':
 
     # ROS node initialization
     rospy.init_node('project_pr2_robot', anonymous=True)
+
+    # get parameters
+    object_list_param = rospy.get_param('/object_list')
+    dropbox_param = rospy.get_param('/dropbox')
 
     # Create Subscribers
     # Testing code
